@@ -1,0 +1,15 @@
+サイトを開くときのアドレス
+
+http://127.0.0.1:5000/
+
+コマンドプロンプトで
+
+まず、cd デジコン
+
+python app.py
+
+ctrl + c でやめる。
+
+
+https://github.com/ikegami-yukino/mecab/releases/tag/v0.996.2
+上のURLでMecabをダウンロードする

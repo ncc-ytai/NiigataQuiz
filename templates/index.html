@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>新潟知識アタック！</title>
+    <link rel="stylesheet" type="text/css" href="static/styles.css">
+</head>
+<body>
+    <div class="catchcopy">
+        <h1>新潟知識アタック！</h1>
+    </div>
+    
+    <div class="characters">
+        <div class="character">
+            <img src="static/character1.png" alt="Character 1">
+            <div class="speech-bubble" id="bubble1"></div>
+        </div>
+        <div class="character">
+            <img src="static/character2.png" alt="Character 2">
+            <div class="speech-bubble" id="bubble2"></div>
+        </div>
+        <div class="character">
+            <img src="static/character3.png" alt="Character 3">
+            <div class="speech-bubble" id="bubble3"></div>
+        </div>
+        <div class="character">
+            <img src="static/character4.png" alt="Character 4">
+            <div class="speech-bubble" id="bubble4"></div>
+        </div>
+        <div class="character">
+            <img src="static/character5.png" alt="Character 5">
+            <div class="speech-bubble" id="bubble5"></div>
+        </div>
+    </div>
+
+    <button class="play-all-button" id="play-all-button" onclick="playAllTexts()">再生開始</button>
+    
+    <div class="question-box" id="question-box"></div>
+    
+    <div class="answer-box" id="answer-box">
+        <input type="text" id="answer-input" placeholder="答えを入力">
+        <button onclick="checkAnswer()">答えを送信</button>
+    </div>
+    
+    <div id="correct-answer"></div>
+    
+    <button class="replay-button" id="replay-button" onclick="replayGame()">再プレイ</button>
+
+    <script>
+        let texts = [];
+        let correctAnswers = [
+            'ヨネックス',
+            '田中角栄',
+            '直江兼続',
+            'ハッピーターン',
+            '糸魚川市',
+            '長岡まつり大花火大会',
+            'コシヒカリ',
+            '枝豆',
+            '佐渡金山',
+            '上杉謙信',
+            '対馬暖流',
+            '八海山',
+            '酵母',
+        ];
+        let currentQuestions = []; // 現在表示されている質問のインデックスを保持
+        let currentAnswers = []; // 現在表示されている解答のインデックスを保持
+        let correctCharacterIndex;
+        let selectedQuestion;
+        
+        document.getElementById('replay-button').style.display = 'none';
+
+        function fetchTexts() {
+            return fetch('/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    texts: [
+                        '創業が新潟の有名なスポーツ用品メーカーで、特にバドミントンやテニスのラケットで知られているブランドは何ですか？',
+                        '新潟県出身で、日本の戦後復興期に「日本列島改造論」を提唱し、総理大臣として活躍した政治家は誰ですか？',
+                        '戦国時代、新潟県の上杉家に仕えた武将で、兜に「愛」の文字をあしらったことで有名な人物は誰ですか？',
+                        '新潟県が発祥地で、1970年代に誕生したお菓子で、袋から直接手を使わずに食べられることが特徴の商品は何でしょう？',
+                        '新潟県は、古代から「翡翠（ヒスイ）」で有名な地域です。この石が特に多く産出される地域は、何市でしょう',
+                        '新潟県の長岡市で発祥し、全国的に有名な「花火大会」を毎年開催しているこのイベントの名前は何でしょう？',
+                        '新潟県の南魚沼市で生産される米のブランドで、日本全国で高い評価を受けているもので、この米の名前は何でしょう？',
+                        '新潟県は日本一の米の生産地として有名ですが、その次に生産量が多い農産物として知られるものは何でしょう？',
+                        '新潟県の佐渡島にある、日本で最も古い金鉱の遺跡で、歴史的な観光地として知られているこの場所の名前は何でしょう？',
+                        '戦国時代の川中島の合戦で、武田信玄と対峙した新潟県出身の有名な武将の名前は何でしょう？',
+                        '新潟県の近海を通り、日本海の海水を暖かくする役割を果たしている暖流の名前は何でしょう？',
+                        '新潟県の日本酒で、「魚沼産コシヒカリ」を使用して作られたことで特に有名な酒の名前は何でしょう？',
+                        '日本酒の味わいを決定づける成分で、特に「甘味」や「酸味」を調整する役割を持つものは何でしょう？',
+                    ]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                texts = data.segmented_texts;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    
+        function playAllTexts() {
+            const bubbles = [];
+            for (let i = 0; i < 5; i++) {
+                const bubble = document.getElementById(`bubble${i + 1}`);
+                if (!bubble) {
+                    console.error(`Bubble element with id 'bubble${i + 1}' not found`);
+                }
+                bubbles.push(bubble);
+            }
+    
+            // ランダムなインデックスを生成
+            currentQuestions = [];
+            for (let i = 0; i < 5; i++) {
+                const randomIndex = Math.floor(Math.random() * texts.length);
+                currentQuestions.push(randomIndex);
+            }
+            currentAnswers = currentQuestions.map(index => correctAnswers[index]);
+    
+            // キャラクターにテキストを割り当てる
+            currentQuestions.forEach((index, i) => {
+                displayText(bubbles[i], texts[index]);
+            });
+    
+            // 正解キャラクターの問題をランダムに選ぶ
+            correctCharacterIndex = Math.floor(Math.random() * 5);
+            selectedQuestion = correctAnswers[currentQuestions[correctCharacterIndex]];
+    
+            console.log("Selected Character Index: ", correctCharacterIndex); // デバッグ用
+            console.log("Selected Question: ", selectedQuestion); // デバッグ用
+    
+            // 全キャラクターのセリフが表示された後に問題を表示
+            setTimeout(() => {
+                document.getElementById('question-box').innerText = `キャラクター${correctCharacterIndex + 1}の問題に答えてください。`;
+                document.getElementById('question-box').style.display = 'block';
+                document.getElementById('answer-box').style.display = 'block';
+                document.getElementById('correct-answer').style.display = 'none';
+            }, currentQuestions.length * 1000 + 2000); // セリフ表示時間に応じて調整
+    
+            document.getElementById('play-all-button').style.display = 'none'; // 一斉再生ボタンを非表示
+            document.getElementById('replay-button').style.display = 'block'; // 再プレイボタンを表示
+        }
+    
+        function displayText(bubble, text) {
+            const words = text.split(' ');
+            let i = 0;
+            bubble.textContent = '';
+            bubble.style.visibility = 'visible';
+    
+            const showWord = setInterval(() => {
+                if (i < words.length) {
+                    bubble.textContent = words[i++];
+                } else {
+                    clearInterval(showWord);
+                    setTimeout(() => {
+                        bubble.style.visibility = 'hidden';
+                    }, 500); // Hide bubble after short delay
+                }
+            }, 250);
+        }
+    
+        function checkAnswer() {
+            const answerInput = document.getElementById('answer-input').value;
+            if (answerInput === selectedQuestion) {
+                const correctAnswerText = `解答は正解です！おめでとう！`;
+                document.getElementById('question-box').style.display = 'none';
+                document.getElementById('answer-box').style.display = 'none';
+                document.getElementById('correct-answer').innerText = correctAnswerText;
+                document.getElementById('correct-answer').style.display = 'block';
+            } else {
+                const correctAnswerText = `解答は不正解です。正解は「${selectedQuestion}」です。再チャレンジしてみてね！`;
+                document.getElementById('question-box').style.display = 'none';
+                document.getElementById('answer-box').style.display = 'none';
+                document.getElementById('correct-answer').innerText = correctAnswerText;
+                document.getElementById('correct-answer').style.display = 'block';
+            }
+        }
+
+        function replayGame() {
+            // 現在の質問ボックスと解答ボックスを非表示
+            document.getElementById('question-box').style.display = 'none';
+            document.getElementById('answer-box').style.display = 'none';
+            document.getElementById('correct-answer').style.display = 'none';
+
+            
+
+            // 回答入力フィールドの内容をクリア
+            document.getElementById('answer-input').value = '';
+
+            // テキストと解答をリセットして再設定
+            fetchTexts().then(() => {
+                // ランダムに問題と対応する解答を再設定
+                currentQuestions = [];
+                for (let i = 0; i < 5; i++) {
+                    const randomIndex = Math.floor(Math.random() * texts.length);
+                    currentQuestions.push(randomIndex);
+                }
+                currentAnswers = currentQuestions.map(index => correctAnswers[index]);
+
+                // キャラクターに新しいテキストを割り当てる
+                const bubbles = [];
+                for (let i = 0; i < 5; i++) {
+                    const bubble = document.getElementById(`bubble${i + 1}`);
+                    if (!bubble) {
+                        console.error(`Bubble element with id 'bubble${i + 1}' not found`);
+                    }
+                    bubbles.push(bubble);
+                }
+
+                currentQuestions.forEach((index, i) => {
+                    displayText(bubbles[i], texts[index]);
+                });
+
+                // 正解キャラクターの問題をランダムに選ぶ
+                correctCharacterIndex = Math.floor(Math.random() * 5);
+                selectedQuestion = correctAnswers[currentQuestions[correctCharacterIndex]];
+
+                console.log("Selected Character Index: ", correctCharacterIndex); // デバッグ用
+                console.log("Selected Question: ", selectedQuestion); // デバッグ用
+
+                // 全キャラクターのセリフが表示された後に問題を表示
+                setTimeout(() => {
+                    document.getElementById('question-box').innerText = `キャラクター${correctCharacterIndex + 1}の問題に答えてください。`;
+                    document.getElementById('question-box').style.display = 'block';
+                    document.getElementById('answer-box').style.display = 'block';
+                    document.getElementById('correct-answer').style.display = 'none';
+                }, currentQuestions.length * 1000 + 2000); // セリフ表示時間に応じて調整
+            });
+        }
+
+        window.onload = fetchTexts;
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
