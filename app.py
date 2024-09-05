@@ -17,10 +17,13 @@ def index():
 
 @app.route('/process', methods=['POST'])
 def process():
-    data = request.get_json()
-    texts = data['texts']  # textsは複数のテキストのリスト
-    segmented_texts = [segment_text(text) for text in texts]
-    return jsonify({'segmented_texts': segmented_texts})
+    try:
+        data = request.get_json()
+        texts = data['texts']  # textsは複数のテキストのリスト
+        segmented_texts = [segment_text(text) for text in texts]
+        return jsonify({'segmented_texts': segmented_texts})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))  # 環境変数からポートを取得
